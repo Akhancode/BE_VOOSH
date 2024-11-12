@@ -11,7 +11,7 @@ const Column = require("../model/columns.model");
 
 // Register a new user
 exports.register = async (req, res, next) => {
-  const { email, password } = req.body;
+  const { email, password ,firstName,lastName } = req.body;
   try {
     if (!email || !password) {
       throw new CustomError("Mandatory fields are missing ", 400);
@@ -27,10 +27,8 @@ exports.register = async (req, res, next) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    const newUser = new User({ email, password: hashedPassword });
+    const newUser = new User({ email, password: hashedPassword ,firstName,lastName});
     await newUser.save();
-    let column = await Column.findOne({ user: newUser._id });
-    console.log(column)
     const newColumn = new Column({user:newUser._id})
     await newColumn.save()
     const token = jwt.sign({ id: newUser._id, email }, process.env.JWT_SECRET, {
