@@ -6,6 +6,8 @@ const {
   validateEmail,
   validatePassword,
 } = require("../utils/validators/validators");
+const { saveColumn } = require("../services/column.service");
+const Column = require("../model/columns.model");
 
 // Register a new user
 exports.register = async (req, res, next) => {
@@ -27,13 +29,10 @@ exports.register = async (req, res, next) => {
 
     const newUser = new User({ email, password: hashedPassword });
     await newUser.save();
-    await saveColumn(
-      col_todo,
-      col_inProgress,
-      col_Done,
-      req.user.id
-    );
-
+    let column = await Column.findOne({ user: newUser._id });
+    console.log(column)
+    const newColumn = new Column({user:newUser._id})
+    await newColumn.save()
     const token = jwt.sign({ id: newUser._id, email }, process.env.JWT_SECRET, {
       expiresIn: "1h",
     });

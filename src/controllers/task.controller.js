@@ -1,12 +1,15 @@
 const Task = require("../model/task.model.js");
-const { saveTaskAndUpdateColumn } = require("../services/task.service.js");
+const {
+  saveTaskAndUpdateColumn,
+  deleteTaskAndUpdateColumn,
+} = require("../services/task.service.js");
 // Create a new task
 exports.createTask = async (req, res, next) => {
   try {
     const { title, description, reminder } = req.body;
-    const taskData = {title,description,reminder}
-    const userId = req.user.id
-    const newTask = await saveTaskAndUpdateColumn(taskData,userId)
+    const taskData = { title, description, reminder };
+    const userId = req.user.id;
+    const newTask = await saveTaskAndUpdateColumn(taskData, userId);
     res.status(201).json(newTask);
   } catch (error) {
     next(error);
@@ -47,13 +50,11 @@ exports.updateTask = async (req, res, next) => {
 // Delete a task
 exports.deleteTask = async (req, res, next) => {
   try {
-    const deletedTask = await Task.findByIdAndDelete(req.params.id);
+    const userId = req.user.id;
+    const taskId = req.params.id;
+    const deletedTask = await deleteTaskAndUpdateColumn(taskId, userId);
 
-    if (!deletedTask) {
-      return res.status(404).json({ message: "Task not found" });
-    }
-
-    res.json({ message: "Task deleted successfully" });
+    res.json(deletedTask);
   } catch (error) {
     next(error);
   }
