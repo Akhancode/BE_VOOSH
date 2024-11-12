@@ -3,6 +3,7 @@ const router = express.Router();
 const columnController = require("../controllers/column.controller");
 // router.get("/", getHabits);
 router.get("/", columnController.getColumns);
+router.get("/board", columnController.getColumnsBoard);
 
 router.post("/", columnController.createColumn);
 

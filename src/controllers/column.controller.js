@@ -26,6 +26,68 @@ exports.getColumns = async (req, res, next) => {
     next(error);
   }
 };
+exports.getColumnsBoard = async (req, res, next) => {
+  try {
+    const columns = await Column.aggregate([
+      {
+        $lookup: {
+          from: "tasks",
+          let: {
+            userId: "$user",
+          },
+          pipeline: [
+            {
+              $group: {
+                _id: null,
+                allDocs: {
+                  $push: {
+                    k: {
+                      $toString: "$_id",
+                    },
+                    v: "$$ROOT",
+                  },
+                },
+              },
+            },
+            {
+              $replaceRoot: {
+                newRoot: {
+                  $arrayToObject: "$allDocs",
+                },
+              },
+            },
+          ],
+          as: "tasks",
+        },
+      },
+      {
+        $unwind: {
+          path: "$tasks",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $addFields: {
+          columns: {
+            col_Done: "$col_Done",
+            col_inProgress: "$col_inProgress",
+            col_todo: "$col_todo",
+          },
+        },
+      },
+      {
+        $project: {
+          columns: 1,
+          tasks: 1,
+          user: 1,
+        },
+      },
+    ]);
+    res.json(columns[0]||{});
+  } catch (error) {
+    next(error);
+  }
+};
 
 exports.updateColumn = async (req, res, next) => {
   try {
@@ -79,7 +141,7 @@ exports.patchColumn = async (req, res, next) => {
 exports.patchColumnByUserId = async (req, res, next) => {
   try {
     const { col_todo, col_inProgress, col_Done } = req.body;
-    console.log(req.body)
+    console.log(req.body);
     const updatedColumn = await Column.findOneAndUpdate(
       { user: req.user.id },
       {
