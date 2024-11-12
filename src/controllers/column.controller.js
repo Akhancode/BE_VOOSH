@@ -1,3 +1,4 @@
+const { default: mongoose } = require("mongoose");
 const Column = require("../model/columns.model");
 const { saveColumn } = require("../services/column.service");
 
@@ -28,12 +29,18 @@ exports.getColumns = async (req, res, next) => {
 };
 exports.getColumnsBoard = async (req, res, next) => {
   try {
+    const userId = req.user.id;
     const columns = await Column.aggregate([
+      {
+        $match: {
+          user: mongoose.Types.ObjectId(userId),
+        },
+      },
       {
         $lookup: {
           from: "tasks",
           let: {
-            userId: "$user",
+            userId: mongoose.Types.ObjectId(userId),
           },
           pipeline: [
             {
@@ -83,7 +90,7 @@ exports.getColumnsBoard = async (req, res, next) => {
         },
       },
     ]);
-    res.json(columns[0]||{});
+    res.json(columns[0] || {});
   } catch (error) {
     next(error);
   }
