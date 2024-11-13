@@ -177,7 +177,8 @@ exports.login = async (req, res, next) => {
         throw new CustomError("Invalid email ! ", 400);
       }
       if (!user) return res.status(400).json({ msg: "User does not exist" });
-
+      
+      if (!user.password)  throw new CustomError("No password Set for this account", 400);
       const isMatch = await bcrypt.compare(password, user.password);
       if (!isMatch) return res.status(400).json({ msg: "Invalid credentials" });
       const token = jwt.sign({ id: user._id, email }, process.env.JWT_SECRET, {

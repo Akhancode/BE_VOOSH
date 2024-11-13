@@ -7,6 +7,7 @@ router.post("/register", async (req, res, next) => {
     authController.register(req,res,next)
 });
 router.post("/login", async (req, res, next) => {
+    console.log("dfdfdfdfd")
     authController.login(req,res,next)
 });
 
