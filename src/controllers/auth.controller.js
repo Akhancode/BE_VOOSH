@@ -147,21 +147,57 @@ exports.login = async (req, res, next) => {
           const firstName = response.data.given_name;
           const lastName = response.data.family_name;
           const email = response.data.email;
-          const picture = response.data.picture;
+          const avatar = response.data.picture;
 
           const existingUser = await User.findOne({ email });
 
-          if (!existingUser) throw "User don't exist!";
+          if (!existingUser) {
+            const newUser = new User({
+              email,
+              firstName,
+              lastName,
+              avatar,
+            });
+            await newUser.save();
+            const newColumn = new Column({ user: newUser._id });
+            await newColumn.save();
+            //adding sample tasks
+            await saveTaskAndUpdateColumn(
+              {
+                title: "Daily Morning Walk",
+                description:
+                  "Starting your day with a 30-minute walk boosts mood, energy levels, and improves cardiovascular health.",
+              },
+              newUser._id
+            );
+            await saveTaskAndUpdateColumn(
+              {
+                title: "Stay Hydrated",
+                description:
+                  "Aim to drink at least 8 glasses of water daily to support digestion, skin health, and energy levels.",
+              },
+              newUser._id
+            );
+            const token = jwt.sign(
+              { id: newUser._id, email },
+              process.env.JWT_SECRET,
+              {
+                expiresIn: "1d",
+              }
+            );
 
-          const token = jwt.sign(
-            {
-              email: existingUser.email,
-              id: existingUser._id,
-            },
-            process.env.JWT_SECRET,
-            { expiresIn: "1d" }
-          );
-          res.json({ accessToken: token, existingUser });
+            res.status(200).json({ accessToken: token });
+          } else {
+            const token = jwt.sign(
+              {
+                email: existingUser.email,
+                id: existingUser._id,
+              },
+              process.env.JWT_SECRET,
+              { expiresIn: "1d" }
+            );
+            res.json({ accessToken: token, existingUser });
+          }
         })
         .catch((err) => {
           // res.status(400).json({ message: "Invalid access token!" });
@@ -177,8 +213,9 @@ exports.login = async (req, res, next) => {
         throw new CustomError("Invalid email ! ", 400);
       }
       if (!user) return res.status(400).json({ msg: "User does not exist" });
-      
-      if (!user.password)  throw new CustomError("No password Set for this account", 400);
+
+      if (!user.password)
+        throw new CustomError("No password Set for this account", 400);
       const isMatch = await bcrypt.compare(password, user.password);
       if (!isMatch) return res.status(400).json({ msg: "Invalid credentials" });
       const token = jwt.sign({ id: user._id, email }, process.env.JWT_SECRET, {
